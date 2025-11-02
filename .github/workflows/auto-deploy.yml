@@ -1,0 +1,45 @@
+name: Auto Deployment Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/amirxo1313/home:latest
+
+  deploy-server:
+    runs-on: ubuntu-latest
+    needs: [build-docker]
+    steps:
+      - name: Deploy container to server via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker stop home || true
+            docker rm home || true
+            docker pull ghcr.io/amirxo1313/home:latest
+            docker run -d --name home -p 80:3000 ghcr.io/amirxo1313/home:latest
