@@ -1,4 +1,4 @@
-name: Auto CI - AI Native DevOps System
+name: Auto CI - AI Native Environment
 
 on:
   push:
@@ -11,47 +11,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 🧱 Checkout سورس از ریپوی جاری
+      # 🧩 Checkout سورس‌کد به آخرین commit
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 🐍 نصب Python 3.12 با کش pip
+      # 🐍 Setup Python 3.12.12 (latest stable)
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
 
-      # 🧩 نصب Node.js 22 با کش npm
+      # 🧱 Setup Node.js 22
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "npm"
 
-      # 🐹 نصب Go 1.22
+      # 🪞 Setup GoLang 1.22
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: "1.22"
-          cache: true
 
-      # ☕ نصب Java 21 با توزیع Temurin (رفع ارور distribution)
+      # ☕ Setup Java (Temurin JDK 21)
       - name: Setup Java 21 (Temurin)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'        # ✅ مقدار اجباری و حیاتی برای v4
+          distribution: 'temurin'        # ضروری برای Runner 2.329.0 ✅
           java-version: '21'
           java-package: 'jdk'
-          check-latest: false
-          cache: 'maven'
+          cache: 'maven'                 # سرعت بیشتر در بیلدهای مکرر
           server-id: github
           server-username: ${{ github.actor }}
           server-password: ${{ secrets.GITHUB_TOKEN }}
           overwrite-settings: true
 
-      # ⚡ Cache وابستگی‌ها برای build سریع‌تر
-      - name: Cache Dependencies
+      # ⚡ Cache وابستگی‌ها بین بیلدها
+      - name: Cache dependencies
         uses: actions/cache@v3
         with:
           path: |
@@ -60,34 +56,32 @@ jobs:
             ~/.gradle/caches
             ~/.cargo/registry
           key: deps-${{ runner.os }}-${{ hashFiles('**/requirements.txt', '**/package-lock.json', '**/go.sum', '**/pom.xml') }}
-          restore-keys: deps-${{ runner.os }}-
+          restore-keys: |
+            deps-${{ runner.os }}-
 
-      # 🧪 اجرای تست‌های Python و گزارش پوشش کد
-      - name: Run Python Tests
+      # 🧪 اجرای تست‌ها برای هر زبان
+      - name: Run Python tests
         run: |
           python -m pip install -U pip setuptools wheel coverage
-          coverage run -m unittest discover -v || true
-          coverage xml || true
+          coverage run -m unittest discover -v
+          coverage xml
 
-      # 📊 تست Node.js و خروجی lcov
-      - name: Run Node.js Tests
+      - name: Run Node.js tests
         run: |
-          npm ci || true
-          npx nyc --reporter=lcov npm test || true
+          npm ci
+          npx nyc --reporter=lcov npm test
 
-      # 🧮 تست Go با گزارش پوشش کلی
-      - name: Run Go Tests
+      - name: Run Go tests
         run: |
-          go test ./... -coverprofile=coverage.out || true
-          go tool cover -func=coverage.out | grep total || true
+          go test ./... -coverprofile=coverage.out
+          go tool cover -func=coverage.out | grep total
 
-      # ☕ تست Java اگر پروژه Maven دارد
-      - name: Run Java Tests
+      - name: Run Java tests (if exists)
         run: |
-          if [ -f "pom.xml" ]; then mvn test || true; fi
+          if [ -f "pom.xml" ]; then mvn test; fi
 
-      # 🧾 آپلود گزارش‌های پوشش تست به عنوان آرتیفکت
-      - name: Upload Coverage Reports
+      # 📦 آپلود آرتیفکت‌ها
+      - name: Upload test coverage reports
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
@@ -96,7 +90,8 @@ jobs:
             coverage.out
             coverage/lcov.info
 
-      # ✅ خلاصه وضعیت نهایی اجرا
-      - name: Pipeline Summary
-        run: echo "✅ CI/CD Pipeline completed successfully on Runner v2.329.0"
+      # ✨ خلاصه وضعیت بیلد
+      - name: Build summary
+        run: |
+          echo "✅ CI/CD completed successfully for Python, Node.js, Go, and Java"
 
