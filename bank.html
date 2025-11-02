@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer with Moving Background</title>
+    <style>
+        body {
+            background-color: black;
+            color: green;
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .background-code {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        .code-line {
+            position: absolute;
+            color: green;
+            font-size: 14px;
+            opacity: 0.7;
+            animation: moveCode 10s linear infinite;
+        }
+        .code-line:nth-child(odd) {
+            animation-duration: 12s;
+        }
+        .code-line:nth-child(even) {
+            animation-duration: 8s;
+        }
+        @keyframes moveCode {
+            0% { transform: translateX(-100vw) translateY(0); }
+            100% { transform: translateX(100vw) translateY(100vh); }
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            position: relative;
+            z-index: 1;
+        }
+        #message {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+        #timer {
+            font-size: 48px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-code">
+        <div class="code-line" style="top: 10%;">import time</div>
+        <div class="code-line" style="top: 20%;">def countdown():</div>
+        <div class="code-line" style="top: 30%;">while True:</div>
+        <div class="code-line" style="top: 40%;">print("Running...")</div>
+        <div class="code-line" style="top: 50%;">time.sleep(1)</div>
+        <div class="code-line" style="top: 60%;">if total_seconds == 0:</div>
+        <div class="code-line" style="top: 70%;">break</div>
+        <div class="code-line" style="top: 80%;">total_seconds -= 1</div>
+        <div class="code-line" style="top: 90%;">print(timer)</div>
+    </div>
+    <div class="container">
+        <div id="message">6 hours remaining until full transfer</div>
+        <div id="timer">6:00:00</div>
+    </div>
+
+    <script>
+        let totalSeconds = 6 * 3600; // 6 hours in seconds
+
+        function updateTimer() {
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            document.getElementById('timer').innerHTML = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (totalSeconds > 0) {
+                totalSeconds--;
+                setTimeout(updateTimer, 1000); // Update every second
+            } else {
+                document.getElementById('timer').innerHTML = "Transfer Complete!";
+            }
+        }
+
+        // Start the countdown
+        updateTimer();
+    </script>
+</body>
+</html>
+
+	
