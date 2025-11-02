@@ -1,8 +1,13 @@
 name: Auto Deployment Pipeline
 
+permissions:
+  contents: read
+  packages: write
+
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-docker:
@@ -26,7 +31,9 @@ jobs:
         with:
           context: .
           push: true
-          tags: ghcr.io/amirxo1313/home:latest
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/home:latest
+            ghcr.io/${{ github.repository_owner }}/home:${{ github.sha }}
 
   deploy-server:
     runs-on: ubuntu-latest
@@ -39,7 +46,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            echo "Logging into GHCR..."
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USERNAME }}" --password-stdin || true
             docker stop home || true
             docker rm home || true
-            docker pull ghcr.io/amirxo1313/home:latest
-            docker run -d --name home -p 80:3000 ghcr.io/amirxo1313/home:latest
+            docker pull ghcr.io/${{ github.repository_owner }}/home:latest
+            docker run -d --name home -p 80:3000 ghcr.io/${{ github.repository_owner }}/home:latest
