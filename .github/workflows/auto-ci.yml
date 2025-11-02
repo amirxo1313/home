@@ -93,12 +93,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect supported languages for CodeQL
+        id: detect
+        run: |
+          echo "Checking for CodeQL-supported files..."
+          patterns=("*.js" "*.ts" "*.jsx" "*.tsx" "*.py" "*.java" "*.go" "*.cs" "*.cpp" "*.c" "*.rb")
+          supported=false
+          for p in "${patterns[@]}"; do
+            if git ls-files -- "$p" | grep -q .; then
+              supported=true
+              echo "Found supported language files matching: $p"
+              break
+            fi
+          done
+          echo "supported=$supported" >> $GITHUB_OUTPUT
+          if [ "$supported" = "true" ]; then
+            echo "CodeQL-supported languages detected. Proceeding with analysis."
+          else
+            echo "No CodeQL-supported languages found. Will skip CodeQL steps."
+          fi
+
+      - name: Skip CodeQL if no supported languages found
+        if: steps.detect.outputs.supported != 'true'
+        run: |
+          echo "No CodeQL-supported languages found in the repository. Skipping CodeQL analysis."
+
       - name: Initialize CodeQL
+        if: steps.detect.outputs.supported == 'true'
         uses: github/codeql-action/init@v3
-        with:
-          languages: 'javascript'
-          queries: +security-and-quality
 
       - name: Perform CodeQL Analysis
+        if: steps.detect.outputs.supported == 'true'
         uses: github/codeql-action/analyze@v3
 
